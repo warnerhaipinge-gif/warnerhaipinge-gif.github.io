@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Build a real VR headset</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #EDEBE4;
+  --ink: #1B1F24;
+  --graphite: #3A4048;
+  --rule: #C9C5BA;
+  --lens: #2F6FA6;
+  --warn: #E8C547;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #16191D;
+    --ink: #E9E7E0;
+    --graphite: #B4B9C0;
+    --rule: #3A4048;
+    --lens: #6AA8DB;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #16191D;
+  --ink: #E9E7E0;
+  --graphite: #B4B9C0;
+  --rule: #3A4048;
+  --lens: #6AA8DB;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 1.5rem; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.12rem;
+  line-height: 1.7;
+}
+.wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 2.5rem) 1.25rem 4rem;
+}
+@media (min-width: 900px) {
+  .wrap { grid-template-columns: 200px minmax(0, 1fr); column-gap: 4rem; }
+}
+nav { font-family: var(--mono); font-size: 0.82rem; color: var(--graphite); }
+nav ul { list-style: none; margin: 0; padding: 0; }
+nav li { margin: 0 0 0.6rem; }
+nav a { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; }
+nav a:hover, nav a:focus-visible { color: var(--lens); border-bottom-color: var(--lens); outline: none; }
+@media (min-width: 900px) {
+  nav { position: sticky; top: 2.5rem; align-self: start; padding-top: 0.4rem; }
+}
+main { max-width: 68ch; min-width: 0; }
+h1 {
+  font-size: clamp(2.3rem, 5.5vw, 3.6rem);
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.2rem;
+}
+h2 {
+  font-size: 1.7rem;
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 3.2rem 0 1rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rule);
+}
+h3 { font-size: 1.2rem; font-weight: 600; margin: 2rem 0 0.4rem; }
+p { margin: 0 0 1.1rem; }
+.lede { font-size: 1.25rem; color: var(--graphite); }
+.figure { margin: 2.2rem 0; }
+.figure svg { width: 100%; height: auto; display: block; }
+.figure figcaption { font-family: var(--mono); font-size: 0.8rem; color: var(--graphite); margin-top: 0.6rem; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 1rem; margin: 1.2rem 0 2rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.7rem 0.6rem 0.7rem 0; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--mono); font-weight: 500; font-size: 0.8rem; color: var(--graphite); }
+td.spec { font-family: var(--mono); font-size: 0.86rem; }
+ol.steps { padding-left: 1.4rem; }
+ol.steps li { margin-bottom: 1.1rem; padding-left: 0.3rem; }
+ol.steps li::marker { color: var(--lens); font-family: var(--mono); }
+.note { border-left: 3px solid var(--lens); padding: 0.2rem 0 0.2rem 1.1rem; margin: 1.6rem 0; color: var(--graphite); }
+.warn { border-left: 3px solid var(--warn); padding: 0.2rem 0 0.2rem 1.1rem; margin: 1.6rem 0; }
+.three { display: grid; gap: 1.4rem; grid-template-columns: 1fr; margin: 1.6rem 0 0.5rem; }
+@media (min-width: 640px) { .three { grid-template-columns: repeat(3, 1fr); } }
+.three div { border-top: 2px solid var(--lens); padding-top: 0.8rem; }
+.three h3 { margin-top: 0.2rem; }
+.three p { font-size: 1rem; color: var(--graphite); margin: 0; }
+footer { margin-top: 4rem; padding-top: 1rem; border-top: 1px solid var(--rule); font-family: var(--mono); font-size: 0.8rem; color: var(--graphite); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav aria-label="On this page">
+    <ul>
+      <li><a href="#what">What "real" means</a></li>
+      <li><a href="#architecture">How it fits together</a></li>
+      <li><a href="#display">Display and optics</a></li>
+      <li><a href="#tracking">Tracking</a></li>
+      <li><a href="#parts">Parts</a></li>
+      <li><a href="#build">Build steps</a></li>
+      <li><a href="#software">Software</a></li>
+      <li><a href="#safety">Safety</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <h1>Build a real VR headset</h1>
+    <p class="lede">A real VR headset draws a stereo picture from your computer, follows your head and your body in a room, and keeps the delay short enough that the world feels fixed. This guide covers that target and what it takes to reach it at home.</p>
+
+    <h2 id="what">What "real" means</h2>
+    <div class="three">
+      <div>
+        <h3>Six degrees of freedom</h3>
+        <p>The headset tracks rotation (3 axes) and position (3 axes). You can lean in and step around, not just turn your head.</p>
+      </div>
+      <div>
+        <h3>High resolution</h3>
+        <p>Around 1440p across both eyes, or better, at 72 Hz or higher. Lower than this and text and distant objects blur.</p>
+      </div>
+      <div>
+        <h3>Low motion-to-photon delay</h3>
+        <p>The gap from movement to updated picture should stay under about 20 ms. Above that, most people get uncomfortable.</p>
+      </div>
+    </div>
+    <p>A commercial headset gets all three through years of engineering. A home build can get close on resolution and tracking, but expect compromises in comfort, field of view, and optics quality. Treat the first build as a learning project and plan for two or three iterations.</p>
+
+    <h2 id="architecture">How it fits together</h2>
+    <figure class="figure">
+      <svg viewBox="0 0 720 200" role="img" aria-labelledby="arch-title arch-desc">
+        <title id="arch-title">Data flow in a tethered VR headset</title>
+        <desc id="arch-desc">A PC renders stereo frames and receives pose data. The headset display and tracker send data back over USB or wireless. Base stations or cameras supply position.</desc>
+        <g font-family="IBM Plex Mono, monospace" font-size="13" stroke="var(--ink)" fill="none" stroke-width="1.6">
+          <rect x="30" y="60" width="160" height="80" fill="none"/>
+          <text x="50" y="98" fill="var(--ink)" stroke="none">PC (GPU)</text>
+          <text x="50" y="118" fill="var(--graphite)" stroke="none">renders stereo frames</text>
+          <rect x="280" y="60" width="160" height="80"/>
+          <text x="300" y="98" fill="var(--ink)" stroke="none">Headset</text>
+          <text x="300" y="118" fill="var(--graphite)" stroke="none">displays + IMU</text>
+          <rect x="530" y="20" width="160" height="60"/>
+          <text x="550" y="56" fill="var(--ink)" stroke="none">Position tracking</text>
+          <rect x="530" y="120" width="160" height="60"/>
+          <text x="548" y="156" fill="var(--ink)" stroke="none">Controllers</text>
+          <line x1="190" y1="100" x2="280" y2="100" stroke="var(--lens)" stroke-width="2"/>
+          <line x1="280" y1="110" x2="190" y2="110" stroke="var(--graphite)" stroke-dasharray="4 4"/>
+          <line x1="440" y1="90" x2="530" y2="60" stroke="var(--graphite)" stroke-dasharray="4 4"/>
+          <line x1="440" y1="115" x2="530" y2="140" stroke="var(--graphite)" stroke-dasharray="4 4"/>
+        </g>
+      </svg>
+      <figcaption>Fig. 1. Video goes one way over a cable (solid line). Pose data comes back (dashed lines). The PC does most of the heavy work.</figcaption>
+    </figure>
+    <p>The PC runs a VR runtime that handles timing and sends frames to the headset. The headset sends its orientation and any camera or tracker data back, and the runtime combines these into a single head pose used to draw the next frame. Most of the engineering is in keeping that loop fast and consistent.</p>
+
+    <h2 id="display">Display and optics</h2>
+    <p>Two displays, one per eye, give the best results. Salvaging panels from a retired headset or a pair of phone-sized LCDs is a common and cheap route, but check the panel's native refresh rate, interface (usually MIPI or LVDS, which needs a driver board), and whether it supports the timing your runtime expects.</p>
+    <p>For lenses, Fresnel lenses are cheap and thin but show visible rings and glare. Pancake lenses, which fold the light path so the headset can be thin, give a sharper image and are the modern standard, but they are harder to source and require careful alignment. Choose based on what you can source reliably and how much you want to spend on optics tuning.</p>
+    <div class="note">
+      <p style="margin:0">Field of view matters more than people expect. Narrow optics feel like looking through a tube even at high resolution. Aim for at least 90 degrees per eye if your lenses allow it.</p>
+    </div>
+
+    <h2 id="tracking">Tracking</h2>
+    <p>Position tracking is what separates a real headset from a rotation-only viewer. There are three practical ways to get it at home.</p>
+    <p><strong>Base stations with sweeping lasers.</strong> Light-house style tracking, the system used by SteamVR-compatible headsets, is the most accurate option. Tracker and base station hardware is sold separately, and open-source projects such as libsurvive can read the signals. It takes the most setup but gives the best results.</p>
+    <p><strong>Cameras and markers.</strong> One or two cameras watch printed or lit markers on the headset, and computer vision (OpenCV, ArUco markers) estimates position. It is cheap and a good first project, but it loses tracking when the markers are hidden and needs good lighting.</p>
+    <p><strong>Inertial only.</strong> An IMU alone gives rotation, not position. Position drifts within seconds, so this is not enough for six degrees of freedom on its own. Use it as the rotation source and pair it with one of the methods above.</p>
+
+    <h2 id="parts">Parts</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Part</th><th>What to look for</th><th>Rough cost</th></tr></thead>
+        <tbody>
+          <tr><td>PC</td><td class="spec">Recent mid-range GPU, USB 3 ports</td><td>already owned or $800+</td></tr>
+          <tr><td>Displays</td><td class="spec">Two panels, 1440p combined, 72 Hz+</td><td>$80–300</td></tr>
+          <tr><td>Driver board</td><td class="spec">Matches panel interface (MIPI, LVDS, eDP)</td><td>$30–80</td></tr>
+          <tr><td>Lenses</td><td class="spec">Fresnel 40–50 mm, or pancake matched to panel</td><td>$30–200</td></tr>
+          <tr><td>IMU</td><td class="spec">BNO055 or a 9-axis fusion sensor</td><td>$15–25</td></tr>
+          <tr><td>Tracking</td><td class="spec">Two USB cameras or a lighthouse kit</td><td>$40–400</td></tr>
+          <tr><td>Microcontroller</td><td class="spec">ESP32-S3 or Teensy for sensor I/O</td><td>$10–20</td></tr>
+          <tr><td>Shell and strap</td><td>3D-printed frame, foam padding, adjustable strap</td><td>$30–80</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="build">Build steps</h2>
+    <ol class="steps">
+      <li><strong>Get the display working on the PC.</strong> Drive each panel through its driver board and confirm a full-resolution test pattern at the target refresh rate.</li>
+      <li><strong>Measure and align the optics.</strong> Position each lens so the center of its panel half sits on the lens axis. Set the spacing to your interpupillary distance, which is usually 58 to 70 mm. Build the mount with a slider.</li>
+      <li><strong>Check the stereo view.</strong> Render a simple scene with a known depth. Close one eye at a time and confirm the image lines up. Misalignment causes headaches fast.</li>
+      <li><strong>Add rotation tracking.</strong> Connect the IMU through the microcontroller to the PC over USB. Stream orientation at a steady rate and add a re-center button.</li>
+      <li><strong>Add position tracking.</strong> Install the camera or lighthouse system and calibrate it. Confirm that moving the headset in a straight line produces a straight line on screen.</li>
+      <li><strong>Apply distortion correction.</strong> Pancake and Fresnel lenses both need the image bent in reverse before it reaches your eyes. Calibrate the coefficients with a grid pattern.</li>
+      <li><strong>Measure the delay.</strong> Use a high-speed camera or a simple LED-and-photodiode rig to measure motion-to-photon time. Reduce it by lowering render cost or tightening the pose prediction.</li>
+      <li><strong>Do a comfort test.</strong> Run each piece of content for 10 minutes, then adjust weight balance, strap tension, and lens distance before you commit to a longer session.</li>
+    </ol>
+
+    <h2 id="software">Software</h2>
+    <p>The cleanest path is to make your headset look like a standard VR device to the PC. OpenXR is the common API that games and engines use, and Monado is an open-source runtime that can drive custom hardware. Unity and Godot both support OpenXR, so content you write for one works with the other.</p>
+    <p>For a first version, write a simple scene in Unity or Godot, connect it to your runtime, and confirm head tracking works before adding content. Driver support for specific panels and trackers changes often, so check the current state of Monado and your tracking library before you buy parts.</p>
+
+    <h2 id="safety">Safety and comfort</h2>
+    <div class="warn">
+      <p style="margin:0">Limit early sessions to 10 to 15 minutes and take breaks. Stop if you feel nausea, headaches, or eye strain. Clear the play area of furniture and cables, and use a spotter or stay in a marked space. Keep children away unless supervised, since their eyes and balance are still developing.</p>
+    </div>
+    <p>High-current displays and power supplies get warm, and a headset sitting on your face traps heat. Keep vents clear and use a fan if the shell feels hot. Keep cables routed so they cannot snag or pull the headset during movement.</p>
+
+    <footer>A practical overview. Verify current driver support, part availability, and pricing before purchase.</footer>
+  </main>
+</div>
+</body>
+</html>
